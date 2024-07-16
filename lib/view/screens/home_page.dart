@@ -20,8 +20,15 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   InAppWebViewController? inAppWebViewController;
-
   PullToRefreshController? pullToRefreshController;
+  String strMainURL="https://www.google.com/";
+  String strSearchURL="https://www.google.com/search?q";
+  String selectedRadio = "";
+  String strGoogle="Google";
+  String strYahoo="Yahoo";
+  String strBing="Bing";
+  String strDuckDuckGo="DuckDuckGo";
+
 
   @override
   void initState() {
@@ -47,8 +54,89 @@ class _HomePageState extends State<HomePage> {
         actions: [
           PopupMenuButton(
             onSelected: (value) {
-              Provider.of<PopupMenuProvider>(context, listen: false)
-                  .allBookmark(context, value);
+              if(value==1){
+                Navigator.pushNamed(context, 'bookmark');
+              }else if(value==2){
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return StatefulBuilder(
+                      builder: (BuildContext context, void Function(void Function()) setState) {
+                        return  AlertDialog(
+                          title: const Text('Search Engine'),
+                          content:  Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              RadioListTile<String>(
+                                title: Text('Google'),
+                                value:strGoogle,
+                                groupValue: selectedRadio,
+                                onChanged: (val) {
+                                  handleRadioValueChange(val!,context);
+                                  setState(() {
+
+                                  strMainURL="https://www.google.com/";
+                                  strSearchURL="https://www.google.com/search?q";
+                                  },);
+                                  Provider.of<RadioProvider>(context,listen: false).updateURL(strMainURL,strSearchURL);
+                                  print(strSearchURL+"\n"+strMainURL);
+
+                                },
+                              ),RadioListTile<String>(
+                                title: Text('Yahoo'),
+                                value:strYahoo,
+                                groupValue:selectedRadio,
+                                onChanged: (val) {
+                                  setState(() {
+
+                                  strMainURL="https://in.search.yahoo.com";
+                                  strSearchURL="https://in.search.yahoo.com/search?q";
+                                  },);
+                                  Provider.of<RadioProvider>(context,listen: false).updateURL(strMainURL,strSearchURL);
+                                  handleRadioValueChange(val!,context);
+                                  print(strSearchURL+"\n"+strMainURL);
+
+                                },
+                              ),RadioListTile<String>(
+                                title: Text('Bing'),
+                                value: strBing,
+                                groupValue:selectedRadio,
+                                onChanged: (val) {
+                                 setState(() {
+                                  strMainURL="https://www.bing.com";
+                                  strSearchURL="https://www.bing.com/search?q";
+                                 },);
+                                  Provider.of<RadioProvider>(context,listen: false).updateURL(strMainURL,strSearchURL);
+                                  print(strSearchURL+"\n"+strMainURL);
+                                  handleRadioValueChange(val!,context);
+                                },
+                              ),RadioListTile<String>(
+                                title: Text('Duck Duck Go'),
+                                value:strDuckDuckGo,
+                                groupValue:selectedRadio,
+                                onChanged: (val) {
+                                  setState(() {
+
+                                  strMainURL="https://duckduckgo.com";
+                                  strSearchURL="https://duckduckgo.com/search?q";
+                                  }, );
+                                  Provider.of<RadioProvider>(context,listen: false).updateURL(strMainURL,strSearchURL);
+                                  print(strSearchURL+"\n"+strMainURL);
+                                  handleRadioValueChange(val!,context);
+
+                                },
+                              )
+                            ],
+                          ),
+
+                        );
+                      },
+
+                    );
+                  },
+                );
+              }
+
             },
             itemBuilder: (context) {
               return [
@@ -79,27 +167,30 @@ class _HomePageState extends State<HomePage> {
           )
         ],
       ),
-      body: Column(
-        children: [
-          Consumer<ChangeProvider>(
-            builder:
-                (BuildContext context, ChangeProvider value, Widget? child) {
-              if (value.webProgress == 1) {
-                return SizedBox();
-              } else {
-                return LinearProgressIndicator(
-                  minHeight: 10,
-                  value: value.webProgress,
-                  color: Colors.yellow,
-                );
-              }
-            },
-          ),
-          Expanded(
-            child:  InAppWebView(
+      body: Consumer<PopupMenuProvider>(
+        builder: (BuildContext context, PopupMenuProvider popupMenuProvider, Widget? child) {
+          return Column(
+            children: [
+              Consumer<ChangeProvider>(
+                builder:
+                    (BuildContext context, ChangeProvider value, Widget? child) {
+                  if (value.webProgress == 1) {
+                    return SizedBox();
+                  } else {
+                    return LinearProgressIndicator(
+                      minHeight: 10,
+                      value: value.webProgress,
+                      color: Colors.yellow,
+                    );
+                  }
+                },
+              ),
+              Expanded(
+                child:
+                InAppWebView(
                   initialUrlRequest: URLRequest(
                     url: WebUri(
-                        "${Provider.of<RadioProvider>(context,listen: false).strMainURL}"),
+                        strMainURL),
 
                   ),
                   onWebViewCreated: (controller) {
@@ -113,90 +204,97 @@ class _HomePageState extends State<HomePage> {
                   onProgressChanged: (controller, progress) {
                     Provider.of<ChangeProvider>(context, listen: false)
                         .onWebProgress(progress / 100);
-
                     print("progress===> $progress");
+
                   },
                   onLoadStop: (controller, url) {
-                    Provider.of<ChangeProvider>(context, listen: false)
-                        .onChangeLoad(false);
+                    Provider.of<ChangeProvider>(context, listen: false).onChangeLoad(false);
                   },
                 ),
 
-          ),
-          Container(
-            decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2)),
-            margin: EdgeInsets.all(10),
-            child: TextFormField(
-              decoration: InputDecoration(
-                  hintText: "Search or type web address",
-                  label: Text("Search"),
-                  suffixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey),
-                      borderRadius: BorderRadius.all(Radius.circular(5)))),
-              onChanged: (value) {
-                String search =
-                    "${Provider.of<RadioProvider>(context, listen: false).strSearchURL}=$value";
-                inAppWebViewController?.loadUrl(
-                    urlRequest: URLRequest(url: WebUri(search)));
-              },
-              onFieldSubmitted: (value) {
-                String search =
-                    "${Provider.of<RadioProvider>(context, listen: false).strSearchURL}=$value";
-                inAppWebViewController?.loadUrl(
-                    urlRequest: URLRequest(url: WebUri(search)));
-              },
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(color: Colors.lightBlue.withOpacity(0.2)),
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    inAppWebViewController?.getOriginalUrl();
+              ),
+              Container(
+                decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2)),
+                margin: EdgeInsets.all(10),
+                child: TextFormField(
+                  decoration: InputDecoration(
+                      hintText: "Search or type web address",
+                      label: Text("Search"),
+                      suffixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey),
+                          borderRadius: BorderRadius.all(Radius.circular(5)))),
+                  onChanged: (value) {
+                    String search =
+                       strSearchURL=value;
+                    inAppWebViewController?.loadUrl(
+                        urlRequest: URLRequest(url: WebUri(search)));
                   },
-                  icon: Icon(Icons.home),
-                  iconSize: 32,
-                ),
-                IconButton(
-                  onPressed: () async {
-                    WebUri? txt = await inAppWebViewController!.getUrl();
-                    Data.bookURL.add(txt.toString());
-                    Data.covertUniqueData();
-                    print(Data.bookURL.length.toString());
+                  onFieldSubmitted: (value) {
+                    String search =
+                       strSearchURL=value;
+                    inAppWebViewController?.loadUrl(
+                        urlRequest: URLRequest(url: WebUri(search)));
                   },
-                  icon: Icon(Icons.bookmark_add_outlined),
-                  iconSize: 32,
                 ),
-                IconButton(
-                  onPressed: () {
-                    inAppWebViewController?.goBack();
-                  },
-                  icon: Icon(Icons.chevron_left),
-                  iconSize: 37,
+              ),
+              Container(
+                decoration: BoxDecoration(color: Colors.lightBlue.withOpacity(0.2)),
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        inAppWebViewController?.getOriginalUrl();
+                      },
+                      icon: Icon(Icons.home),
+                      iconSize: 32,
+                    ),
+                    IconButton(
+                      onPressed: () async {
+                        WebUri? txt = await inAppWebViewController!.getUrl();
+                        Data.bookURL.add(txt.toString());
+                        Data.covertUniqueData();
+                        print(Data.bookURL.length.toString());
+                      },
+                      icon: Icon(Icons.bookmark_add_outlined),
+                      iconSize: 32,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        inAppWebViewController?.goBack();
+                      },
+                      icon: Icon(Icons.chevron_left),
+                      iconSize: 37,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        inAppWebViewController?.reload();
+                      },
+                      icon: Icon(Icons.refresh),
+                      iconSize: 32,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        inAppWebViewController?.goForward();
+                      },
+                      icon: Icon(Icons.chevron_right),
+                      iconSize: 37,
+                    ),
+                  ],
                 ),
-                IconButton(
-                  onPressed: () {
-                    inAppWebViewController?.reload();
-                  },
-                  icon: Icon(Icons.refresh),
-                  iconSize: 32,
-                ),
-                IconButton(
-                  onPressed: () {
-                    inAppWebViewController?.goForward();
-                  },
-                  icon: Icon(Icons.chevron_right),
-                  iconSize: 37,
-                ),
-              ],
-            ),
-          )
-        ],
+              )
+            ],
+          );
+        },
+
       ),
     );
   }
+void handleRadioValueChange(String value, BuildContext context){
+  selectedRadio=value;
+  Navigator.of(context)
+      .pop();
+}
 }
