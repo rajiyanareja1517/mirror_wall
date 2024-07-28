@@ -21,13 +21,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   InAppWebViewController? inAppWebViewController;
   PullToRefreshController? pullToRefreshController;
-  String strMainURL = "https://www.google.com/";
-  String strSearchURL = "https://www.google.com/search?q";
+
   String selectedRadio = "https://www.google.com/";
-  String strGoogle = "Google";
-  String strYahoo = "Yahoo";
-  String strBing = "Bing";
-  String strDuckDuckGo = "DuckDuckGo";
 
   @override
   void initState() {
@@ -64,43 +59,18 @@ class _HomePageState extends State<HomePage> {
                           void Function(void Function()) setState) {
                         return AlertDialog(
                           title: const Text('Search Engine'),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              RadioListTile<String>(
-                                title: Text('Google'),
-                                value: "https://www.google.com/",
-                                groupValue: selectedRadio,
-                                onChanged: (val) {
-                                  handleRadioValueChange(val!, context);
-                                },
-                              ),
-                              RadioListTile<String>(
-                                title: Text('Yahoo'),
-                                value: "https://in.search.yahoo.com/",
-                                groupValue: selectedRadio,
-                                onChanged: (val) {
-                                  handleRadioValueChange(val!, context);
-                                },
-                              ),
-                              RadioListTile<String>(
-                                title: Text('Bing'),
-                                value: "https://www.bing.com/",
-                                groupValue: selectedRadio,
-                                onChanged: (val) {
-                                  handleRadioValueChange(val!, context);
-                                },
-                              ),
-                              RadioListTile<String>(
-                                title: Text('Duck Duck Go'),
-                                value: "https://duckduckgo.com/",
-                                groupValue: selectedRadio,
-                                onChanged: (val) {
-                                  handleRadioValueChange(val!, context);
-                                },
-                              )
-                            ],
-                          ),
+                          content:
+                              Column(mainAxisSize: MainAxisSize.min, children: [
+                            ...Data.dataBrows
+                                .map((data) => RadioListTile<String>(
+                                      title: Text("${data['title']}"),
+                                      value: "${data['browsLink']}",
+                                      groupValue: selectedRadio,
+                                      onChanged: (val) {
+                                        handleRadioValueChange(val!, context);
+                                      },
+                                    ))
+                          ]),
                         );
                       },
                     );
@@ -159,7 +129,7 @@ class _HomePageState extends State<HomePage> {
               Expanded(
                 child: InAppWebView(
                   initialUrlRequest: URLRequest(
-                    url: WebUri(strMainURL),
+                    url: WebUri("https://www.google.com/"),
                   ),
                   onWebViewCreated: (controller) {
                     inAppWebViewController = controller;
@@ -262,7 +232,6 @@ class _HomePageState extends State<HomePage> {
   void handleRadioValueChange(String value, BuildContext context) {
     selectedRadio = value;
     inAppWebViewController?.loadUrl(urlRequest: URLRequest(url: WebUri(value)));
-
     Navigator.of(context).pop();
   }
 }
